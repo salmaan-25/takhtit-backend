@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from .models import Project, Sprint, Ticket
 from .serializers import ProjectSerializer, SprintSerializer, TicketSerializer
 
+
 class ProjectListView(APIView):
 
     def get(self, request):
@@ -21,6 +22,8 @@ class ProjectListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ProjectDetailView(APIView):
 
     def get_object(self, pk):
@@ -47,6 +50,8 @@ class ProjectDetailView(APIView):
         project = self.get_object(pk)
         project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class SprintListView(APIView):
 
     def get(self, request):
@@ -84,6 +89,8 @@ class SprintDetailView(APIView):
         sprint = self.get_object(pk)
         sprint.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class TicketListView(APIView):
 
     def get(self, request):
