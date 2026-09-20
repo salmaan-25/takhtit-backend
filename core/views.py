@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404
 
 from .models import Project, Sprint, Ticket
 from .serializers import ProjectSerializer, SprintSerializer, TicketSerializer
+from rest_framework.permissions import AllowAny
+from .serializers import RegisterSerializer
 
 
 class ProjectListView(APIView):
@@ -16,10 +18,10 @@ class ProjectListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        """Create a new project."""
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # Automatically set created_by to the logged-in user!
+            serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -101,7 +103,8 @@ class TicketListView(APIView):
     def post(self, request):
         serializer = TicketSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # Automatically set reporter to the logged-in user!
+            serializer.save(reporter=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -128,3 +131,16 @@ class TicketDetailView(APIView):
         ticket = self.get_object(pk)
         ticket.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]  # Anyone can register without a token!
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "User created successfully"}, status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
