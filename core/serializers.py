@@ -8,11 +8,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
         read_only_fields = ['id']
 
+
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'name', 'key', 'description', 'created_by', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
 
 class SprintSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,6 +35,7 @@ class SprintSerializer(serializers.ModelSerializer):
                 {"end_date": "End date cannot be before start date."}
             )
         return data
+
 
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
