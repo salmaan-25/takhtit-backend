@@ -7,20 +7,27 @@ from .models import Project, Sprint, Ticket
 from .serializers import ProjectSerializer, SprintSerializer, TicketSerializer
 from rest_framework.permissions import AllowAny
 from .serializers import RegisterSerializer
+from .filters import TicketFilter, SprintFilter
 
 
 class ProjectListView(APIView):
+    search_fields = ["name", "key", "description"]
+    ordering_fields = ["created_at", "name"]
 
     def get(self, request):
-        """Return a list of all projects."""
-        projects = Project.objects.all()
-        serializer = ProjectSerializer(projects, many=True)
+        from django_filters.rest_framework import DjangoFilterBackend
+        from rest_framework.filters import SearchFilter, OrderingFilter
+
+        queryset = Project.objects.all()
+        # Apply each filter backend manually
+        for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
+            queryset = backend.filter_queryset(request, queryset, self)
+        serializer = ProjectSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
-            # Automatically set created_by to the logged-in user!
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -55,10 +62,21 @@ class ProjectDetailView(APIView):
 
 
 class SprintListView(APIView):
+    filterset_class = SprintFilter
+    search_fields = ["name"]
+    ordering_fields = ["start_date", "end_date", "created_at"]
 
     def get(self, request):
-        sprints = Sprint.objects.all()
-        serializer = SprintSerializer(sprints, many=True)
+        from django_filters.rest_framework import DjangoFilterBackend
+        from rest_framework.filters import SearchFilter, OrderingFilter
+
+        queryset = Sprint.objects.all()
+
+        # Apply each filter backend manually
+        for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
+            queryset = backend.filter_queryset(request, queryset, self)
+
+        serializer = SprintSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -94,16 +112,26 @@ class SprintDetailView(APIView):
 
 
 class TicketListView(APIView):
+    filterset_class = TicketFilter
+    search_fields = ["title", "description", "key"]
+    ordering_fields = ["created_at", "updated_at", "priority", "status"]
 
     def get(self, request):
-        tickets = Ticket.objects.all()
-        serializer = TicketSerializer(tickets, many=True)
+        from django_filters.rest_framework import DjangoFilterBackend
+        from rest_framework.filters import SearchFilter, OrderingFilter
+
+        queryset = Ticket.objects.all()
+
+        # Apply each filter backend manually
+        for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
+            queryset = backend.filter_queryset(request, queryset, self)
+
+        serializer = TicketSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = TicketSerializer(data=request.data)
         if serializer.is_valid():
-            # Automatically set reporter to the logged-in user!
             serializer.save(reporter=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
