@@ -1,5 +1,8 @@
 from django.test import TestCase
 from datetime import date, timedelta
+from rest_framework.test import APITestCase
+from rest_framework import status
+from django.urls import reverse
 from .models import CustomUser, Project, Sprint, Ticket
 from .serializers import UserSerializer, ProjectSerializer, SprintSerializer, TicketSerializer
 
@@ -140,3 +143,68 @@ class SerializerTests(TestCase):
         serializer = TicketSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('priority', serializer.errors)
+
+
+class ViewTests(APITestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='password123',
+            role='MEMBER'
+        )
+        self.project = Project.objects.create(
+            name='Test Project',
+            key='TST',
+            created_by=self.user
+        )
+        self.sprint = Sprint.objects.create(
+            name='Sprint 1',
+            project=self.project
+        )
+        self.ticket = Ticket.objects.create(
+            key='TST-1',
+            title='First Ticket',
+            project=self.project,
+            reporter=self.user
+        )
+
+    def test_project_list(self):
+        url = reverse('project-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_project_create(self):
+        url = reverse('project-list')
+        data = {'name': 'New Project', 'key': 'NEW', 'description': 'Testing'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Project.objects.count(), 2)
+
+    def test_project_detail(self):
+        url = reverse('project-detail', args=[self.project.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], 'Test Project')
+
+    def test_sprint_list(self):
+        url = reverse('sprint-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_ticket_create(self):
+        url = reverse('ticket-list')
+        data = {
+            'key': 'TST-2',
+            'title': 'Another Ticket',
+            'project': self.project.id,
+            'reporter': self.user.id,
+            'status': 'TODO',
+            'priority': 'HIGH'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Ticket.objects.count(), 2)
+
