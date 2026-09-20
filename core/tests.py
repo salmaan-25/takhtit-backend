@@ -191,3 +191,50 @@ class ViewTests(APITestCase):
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Ticket.objects.count(), 2)
+
+
+class FilteringTests(APITestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="filteruser",
+            email="filter@example.com",
+            password="password123",
+            role="MEMBER",
+        )
+        self.project = Project.objects.create(
+            name="Filter Project", key="FLT", created_by=self.user
+        )
+        self.ticket_todo = Ticket.objects.create(
+            key="FLT-1",
+            title="Todo ticket",
+            project=self.project,
+            reporter=self.user,
+            status="TODO",
+            priority="HIGH",
+        )
+        self.ticket_done = Ticket.objects.create(
+            key="FLT-2",
+            title="Done ticket",
+            project=self.project,
+            reporter=self.user,
+            status="DONE",
+            priority="LOW",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_filter_tickets_by_status(self):
+        url = reverse("ticket-list")
+        response = self.client.get(url, {"status": "TODO"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Only the TODO ticket should be returned
+        results = response.data["results"] if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["status"], "TODO")
+
+    def test_search_tickets(self):
+        url = reverse("ticket-list")
+        response = self.client.get(url, {"search": "Done"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["key"], "FLT-2")
