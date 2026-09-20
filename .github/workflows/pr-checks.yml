@@ -56,7 +56,7 @@ jobs:
         env:
           POSTGRES_DB: takhtit_test_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: test_db_pass
         ports:
           - 5432:5432
         # Wait until PostgreSQL is ready before running steps
@@ -88,7 +88,7 @@ jobs:
           DEBUG: "True"
           DB_NAME: takhtit_test_db
           DB_USER: postgres
-          DB_PASSWORD: postgres
+          DB_PASSWORD: test_db_pass
           DB_HOST: localhost
           DB_PORT: 5432
         run: python manage.py check
@@ -99,7 +99,7 @@ jobs:
           DEBUG: "True"
           DB_NAME: takhtit_test_db
           DB_USER: postgres
-          DB_PASSWORD: postgres
+          DB_PASSWORD: test_db_pass
           DB_HOST: localhost
           DB_PORT: 5432
         run: python manage.py migrate --noinput
@@ -110,7 +110,7 @@ jobs:
           DEBUG: "True"
           DB_NAME: takhtit_test_db
           DB_USER: postgres
-          DB_PASSWORD: postgres
+          DB_PASSWORD: test_db_pass
           DB_HOST: localhost
           DB_PORT: 5432
         run: |
