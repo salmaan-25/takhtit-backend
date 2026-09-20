@@ -1,0 +1,118 @@
+name: PR Checks
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Only runs when a Pull Request is opened/updated/reopened AGAINST main.
+# Does NOT run on every commit — only when you raise a PR to main.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Lint
+  # Checks code style using flake8. Catches syntax errors, unused imports,
+  # undefined variables, and basic formatting issues.
+  # ───────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (flake8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8
+
+      - name: Run flake8
+        run: |
+          # --max-line-length 119  → allows slightly longer lines (common Django convention)
+          # --exclude venv,migrations → skip auto-generated files
+          flake8 . --max-line-length=119 --exclude=venv,migrations
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Django System Check + Tests
+  # Spins up a real PostgreSQL container, runs Django's built-in system checks,
+  # and then runs your test suite. Both jobs run in parallel.
+  # ───────────────────────────────────────────────────────────────────────────
+  test:
+    name: Django Checks & Tests
+    runs-on: ubuntu-latest
+
+    # Spin up a PostgreSQL service container for testing
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: takhtit_test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        # Wait until PostgreSQL is ready before running steps
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django system check
+        # Django's built-in check catches model errors, settings issues,
+        # broken URL patterns, and misconfigured apps — before tests even run.
+        env:
+          SECRET_KEY: "ci-test-secret-key-not-used-in-production"
+          DEBUG: "True"
+          DB_NAME: takhtit_test_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: python manage.py check
+
+      - name: Run migrations
+        env:
+          SECRET_KEY: "ci-test-secret-key-not-used-in-production"
+          DEBUG: "True"
+          DB_NAME: takhtit_test_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: python manage.py migrate --noinput
+
+      - name: Run tests
+        env:
+          SECRET_KEY: "ci-test-secret-key-not-used-in-production"
+          DEBUG: "True"
+          DB_NAME: takhtit_test_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: |
+          # --verbosity 2 → shows each test by name as it runs
+          python manage.py test --verbosity 2

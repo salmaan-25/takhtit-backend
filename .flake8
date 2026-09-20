@@ -1,0 +1,16 @@
+[flake8]
+# Maximum line length — 119 is common for Django projects
+max-line-length = 119
+
+# Directories and patterns to skip
+exclude =
+    venv,
+    .git,
+    __pycache__,
+    */migrations/*,
+    *.pyc
+
+# Error codes to ignore:
+# W503 — line break before binary operator (conflicts with Black formatter convention)
+# E501 is already handled by max-line-length
+extend-ignore = W503
