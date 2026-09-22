@@ -8,11 +8,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data  # Persist data in a named volume
     environment:
-      POSTGRES_DB: takhtit_db
-      POSTGRES_USER: takhtit_user
-      POSTGRES_PASSWORD: takhtit_pass
+      POSTGRES_DB: ${DB_NAME:-takhtit_db}
+      POSTGRES_USER: ${DB_USER:-takhtit_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U takhtit_user -d takhtit_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-takhtit_user} -d ${DB_NAME:-takhtit_db}"]
       interval: 5s
       retries: 5
 
@@ -27,14 +27,14 @@ services:
     ports:
       - "8000:8000"                     # Map container port 8000 → host port 8000
     environment:
-      SECRET_KEY: your-secret-key-here-change-in-production
-      DEBUG: "True"
-      DB_NAME: takhtit_db
-      DB_USER: takhtit_user
-      DB_PASSWORD: takhtit_pass
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG:-True}
+      DB_NAME: ${DB_NAME:-takhtit_db}
+      DB_USER: ${DB_USER:-takhtit_user}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: db                       # <-- this is the service name above, NOT localhost!
       DB_PORT: "5432"
-      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     depends_on:
       db:
         condition: service_healthy      # Wait for postgres healthcheck to pass before starting
