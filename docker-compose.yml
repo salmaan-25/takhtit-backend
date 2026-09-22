@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL database ──────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine           # Official Postgres image (alpine = very small)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist data in a named volume
+    environment:
+      POSTGRES_DB: takhtit_db
+      POSTGRES_USER: takhtit_user
+      POSTGRES_PASSWORD: takhtit_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U takhtit_user -d takhtit_db"]
+      interval: 5s
+      retries: 5
+
+  # ── Django application ───────────────────────────────────────────────────────
+  web:
+    build: .                            # Build image from the Dockerfile in current dir
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn takhtit.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - .:/app                          # Mount source code so changes reflect without rebuild
+    ports:
+      - "8000:8000"                     # Map container port 8000 → host port 8000
+    environment:
+      SECRET_KEY: your-secret-key-here-change-in-production
+      DEBUG: "True"
+      DB_NAME: takhtit_db
+      DB_USER: takhtit_user
+      DB_PASSWORD: takhtit_pass
+      DB_HOST: db                       # <-- this is the service name above, NOT localhost!
+      DB_PORT: "5432"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+    depends_on:
+      db:
+        condition: service_healthy      # Wait for postgres healthcheck to pass before starting
+
+# ── Named volumes ────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
