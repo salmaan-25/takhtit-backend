@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.env
+*.sqlite3
+.flake8
+requirements-dev.txt
+staticfiles/
