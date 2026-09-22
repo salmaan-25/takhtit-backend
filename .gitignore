@@ -12,24 +12,12 @@ __pycache__/
 # Django
 *.log
 db.sqlite3
-# Virtual environment
-venv/
-
-# Environment variables
-.env
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-
-# Django
-*.log
-db.sqlite3
 
 # VS Code
 .vscode/
 
 # macOS
 .DS_Store
+
+# Collected static files (auto-generated, never commit)
 staticfiles/
