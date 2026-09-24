@@ -7,6 +7,9 @@ from .views import (
     TicketListView,
     TicketDetailView,
     RegisterView,
+    UserListView,
+    MeView,
+    MyTicketsView,
 )
 
 urlpatterns = [
@@ -20,4 +23,7 @@ urlpatterns = [
     path("tickets/", TicketListView.as_view(), name="ticket-list"),
     path("tickets/<int:pk>/", TicketDetailView.as_view(), name="ticket-detail"),
     path("register/", RegisterView.as_view(), name="register"),
+    path("users/", UserListView.as_view(), name="user-list"),
+    path("auth/me/", MeView.as_view(), name="me"),
+    path("tickets/my/", MyTicketsView.as_view(), name="my-tickets"),
 ]

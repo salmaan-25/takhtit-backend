@@ -4,7 +4,12 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 
 from .models import Project, Sprint, Ticket
-from .serializers import ProjectSerializer, SprintSerializer, TicketSerializer
+from .serializers import (
+    ProjectSerializer,
+    SprintSerializer,
+    TicketSerializer,
+    UserSerializer,
+)
 from rest_framework.permissions import AllowAny
 from .serializers import RegisterSerializer
 from .filters import TicketFilter, SprintFilter
@@ -132,8 +137,15 @@ class TicketListView(APIView):
     def post(self, request):
         serializer = TicketSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(reporter=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            import uuid
+
+            project = serializer.validated_data["project"]
+            ticket = serializer.save(reporter=request.user, key=str(uuid.uuid4())[:20])
+            ticket.key = f"{project.key}-{ticket.id}"
+            ticket.save(update_fields=["key"])
+            return Response(
+                TicketSerializer(ticket).data, status=status.HTTP_201_CREATED
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -172,3 +184,45 @@ class RegisterView(APIView):
                 {"message": "User created successfully"}, status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserListView(APIView):
+    """Return a flat list of all users — used for assignee dropdowns."""
+
+    def get(self, request):
+        from .models import CustomUser
+
+        users = CustomUser.objects.all().order_by("username")
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
+class MeView(APIView):
+    """Return the profile of the currently authenticated user."""
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+
+class MyTicketsView(APIView):
+    """
+    Return tickets assigned to the currently authenticated user.
+    Supports the same filters/search/ordering as TicketListView.
+    """
+
+    filterset_class = TicketFilter
+    search_fields = ["title", "description", "key"]
+    ordering_fields = ["created_at", "updated_at", "priority", "status"]
+
+    def get(self, request):
+        from django_filters.rest_framework import DjangoFilterBackend
+        from rest_framework.filters import SearchFilter, OrderingFilter
+
+        queryset = Ticket.objects.filter(assignee=request.user)
+
+        for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
+            queryset = backend.filter_queryset(request, queryset, self)
+
+        serializer = TicketSerializer(queryset, many=True)
+        return Response(serializer.data)

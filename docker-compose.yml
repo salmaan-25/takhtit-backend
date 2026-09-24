@@ -19,8 +19,7 @@ services:
     build: .                            # Build image from the Dockerfile in current dir
     command: >
       sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn takhtit.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+             python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app                          # Mount source code so changes reflect without rebuild
     ports:
