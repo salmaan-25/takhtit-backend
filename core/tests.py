@@ -5,8 +5,8 @@ from datetime import date, timedelta
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from .models import CustomUser, Organization, OrganizationMember, Project, Sprint, Ticket
-from .serializers import UserSerializer, ProjectSerializer, SprintSerializer, TicketSerializer
+from .models import CustomUser, Organization, OrganizationMember, Project, Ticket
+from .serializers import UserSerializer, SprintSerializer
 
 
 # ===========================================================================
