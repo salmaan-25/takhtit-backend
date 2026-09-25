@@ -1,13 +1,41 @@
 from rest_framework import serializers
-from .models import CustomUser, Project, Sprint, Ticket
+from .models import CustomUser, Project, Sprint, Ticket, Organization, OrganizationMember
 from django.contrib.auth.hashers import make_password
 
 
+class OrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ["id", "name", "slug"]
+
+
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the /api/auth/me/ endpoint.
+    Returns the user's profile, their organization, and their role within it.
+    """
+    organization = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email", "first_name", "last_name", "role"]
+        fields = ["id", "username", "email", "first_name", "last_name", "organization", "role"]
         read_only_fields = ["id"]
+
+    def get_organization(self, obj):
+        """Return the user's org if they are a member of one, else None."""
+        try:
+            org = obj.member.organization
+            return OrganizationSerializer(org).data
+        except OrganizationMember.DoesNotExist:
+            return None
+
+    def get_role(self, obj):
+        """Return the user's role within their org, else None."""
+        try:
+            return obj.member.role
+        except OrganizationMember.DoesNotExist:
+            return None
 
 
 class ProjectSerializer(serializers.ModelSerializer):
