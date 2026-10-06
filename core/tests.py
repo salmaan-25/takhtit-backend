@@ -1,4 +1,4 @@
-from django.test import TestCase
+﻿from django.test import TestCase
 from django.urls import reverse
 from datetime import date, timedelta
 
@@ -28,6 +28,7 @@ def make_user(username="user", password="pass1234", org=None, role="MEMBER"):
 # Model Tests
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class OrganizationModelTests(TestCase):
     def test_organization_str(self):
         org = make_org()
@@ -51,6 +52,7 @@ class OrganizationModelTests(TestCase):
             OrganizationMember.objects.create(user=user, organization=org2, role="MEMBER")
 
 
+@override_settings(CACHES=DUMMY_CACHE)
 class ProjectModelTests(TestCase):
     def setUp(self):
         self.org = make_org()
@@ -70,6 +72,7 @@ class ProjectModelTests(TestCase):
 # Serializer Tests
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class UserSerializerTests(TestCase):
     def test_me_serializer_includes_org_and_role(self):
         org = make_org()
@@ -88,6 +91,7 @@ class UserSerializerTests(TestCase):
         self.assertIsNone(data["role"])
 
 
+@override_settings(CACHES=DUMMY_CACHE)
 class SprintSerializerTests(TestCase):
     def setUp(self):
         self.org = make_org()
@@ -121,9 +125,10 @@ class SprintSerializerTests(TestCase):
 
 
 # ===========================================================================
-# Permission Tests — Core RBAC logic
+# Permission Tests â€” Core RBAC logic
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class PermissionTests(APITestCase):
     def setUp(self):
         self.org = make_org()
@@ -204,9 +209,10 @@ class PermissionTests(APITestCase):
 
 
 # ===========================================================================
-# Data Isolation Tests — Cross-org leakage prevention
+# Data Isolation Tests â€” Cross-org leakage prevention
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class DataIsolationTests(APITestCase):
     def setUp(self):
         # Org A
@@ -264,6 +270,7 @@ class DataIsolationTests(APITestCase):
 # Me Endpoint Tests
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class MeViewTests(APITestCase):
     def test_me_returns_org_and_role(self):
         org = make_org()
@@ -286,6 +293,7 @@ class MeViewTests(APITestCase):
 # Filtering Tests (still work within org scope)
 # ===========================================================================
 
+@override_settings(CACHES=DUMMY_CACHE)
 class FilteringTests(APITestCase):
     def setUp(self):
         self.org = make_org()

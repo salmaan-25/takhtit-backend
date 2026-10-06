@@ -31,23 +31,30 @@ CACHE_TTL_LONG = 60 * 30    # 30 minutes – for near-static data (users list)
 def _projects_list_key(org_id):
     return f"org:{org_id}:projects"
 
+
 def _project_detail_key(org_id, pk):
     return f"org:{org_id}:project:{pk}"
+
 
 def _sprints_list_key(org_id):
     return f"org:{org_id}:sprints"
 
+
 def _sprint_detail_key(org_id, pk):
     return f"org:{org_id}:sprint:{pk}"
+
 
 def _tickets_list_key(org_id):
     return f"org:{org_id}:tickets"
 
+
 def _ticket_detail_key(org_id, pk):
     return f"org:{org_id}:ticket:{pk}"
 
+
 def _users_list_key(org_id):
     return f"org:{org_id}:users"
+
 
 def _my_tickets_key(org_id, user_id):
     return f"org:{org_id}:user:{user_id}:my_tickets"
