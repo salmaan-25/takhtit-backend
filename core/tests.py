@@ -9,7 +9,6 @@ from .models import CustomUser, Organization, OrganizationMember, Project, Ticke
 from .serializers import UserSerializer, SprintSerializer
 
 
-
 # Use Django built-in in-memory cache in tests - no Redis needed in CI
 DUMMY_CACHE = {
     "default": {
@@ -20,6 +19,7 @@ DUMMY_CACHE = {
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def make_org(name="Acme Corp", slug="acme-corp"):
     return Organization.objects.create(name=name, slug=slug)
