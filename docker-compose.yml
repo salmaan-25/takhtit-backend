@@ -1,6 +1,6 @@
-services:
+﻿services:
 
-  # ── PostgreSQL database ──────────────────────────────────────────────────────
+  # 🐘 PostgreSQL database ─────────────────────────────────────────────────────
   db:
     image: postgres:15-alpine           # Official Postgres image (alpine = very small)
     volumes:
@@ -14,7 +14,17 @@ services:
       interval: 5s
       retries: 5
 
-  # ── Django application ───────────────────────────────────────────────────────
+  # 🔴 Redis cache ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine               # Official Redis image (alpine = very small)
+    ports:
+      - "6379:6379"                     # Expose Redis port for local debugging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # 🌐 Django application ──────────────────────────────────────────────────────
   web:
     build: .                            # Build image from the Dockerfile in current dir
     command: >
@@ -32,11 +42,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: db                       # <-- this is the service name above, NOT localhost!
       DB_PORT: "5432"
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/1}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     depends_on:
       db:
         condition: service_healthy      # Wait for postgres healthcheck to pass before starting
+      redis:
+        condition: service_healthy      # Wait for redis healthcheck to pass before starting
 
-# ── Named volumes ────────────────────────────────────────────────────────────
+# 🗂 Named volumes ──────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
