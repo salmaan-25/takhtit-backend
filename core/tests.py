@@ -1,4 +1,4 @@
-﻿from django.test import TestCase
+﻿from django.test import TestCase, override_settings
 from django.urls import reverse
 from datetime import date, timedelta
 
@@ -8,6 +8,14 @@ from rest_framework import status
 from .models import CustomUser, Organization, OrganizationMember, Project, Ticket
 from .serializers import UserSerializer, SprintSerializer
 
+
+
+# Use Django built-in in-memory cache in tests - no Redis needed in CI
+DUMMY_CACHE = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
 
 # ===========================================================================
 # Helpers
