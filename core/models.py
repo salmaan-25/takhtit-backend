@@ -134,9 +134,9 @@ class Ticket(models.Model):
     )
 
     # Enums/Choices
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="TODO")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="TODO", db_index=True)
     priority = models.CharField(
-        max_length=20, choices=PRIORITY_CHOICES, default="MEDIUM"
+        max_length=20, choices=PRIORITY_CHOICES, default="MEDIUM", db_index=True
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

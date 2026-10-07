@@ -1,4 +1,4 @@
-﻿from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -276,7 +276,10 @@ class TicketListView(APIView):
                 return Response(cached)
 
         print("CACHE MISS – tickets list")
-        queryset = Ticket.objects.filter(project__organization=org)
+        # select_related eliminates N+1 queries when serializing assignee_username
+        queryset = Ticket.objects.filter(project__organization=org).select_related(
+            "assignee", "reporter", "project", "sprint"
+        )
         for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
             queryset = backend.filter_queryset(request, queryset, self)
         serializer = TicketSerializer(queryset, many=True)
@@ -310,7 +313,12 @@ class TicketDetailView(APIView):
 
     def get_object(self, request, pk):
         org = _get_user_org(request)
-        return get_object_or_404(Ticket, pk=pk, project__organization=org)
+        # select_related prevents a separate SQL query for assignee.username
+        return get_object_or_404(
+            Ticket.objects.select_related("assignee", "reporter", "project", "sprint"),
+            pk=pk,
+            project__organization=org,
+        )
 
     def get(self, request, pk):
         org = _get_user_org(request)
@@ -330,14 +338,23 @@ class TicketDetailView(APIView):
     def patch(self, request, pk):
         org = _get_user_org(request)
         ticket = self.get_object(request, pk)
+        old_assignee_id = ticket.assignee_id
         serializer = TicketSerializer(ticket, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            cache.delete(_ticket_detail_key(org.id, pk))
-            cache.delete(_tickets_list_key(org.id))
-            # If ticket is reassigned, old + new assignee's my_tickets are stale
-            cache.delete(_my_tickets_key(org.id, ticket.assignee_id or 0))
-            cache.delete(_my_tickets_key(org.id, request.user.id))
+            # Only write the fields that were actually sent – avoids a full UPDATE
+            changed_fields = list(serializer.validated_data.keys())
+            if changed_fields:
+                serializer.save(update_fields=changed_fields + ["updated_at"])
+            else:
+                serializer.save()
+
+            # Batch all Redis deletes into a single round-trip
+            cache.delete_many([
+                _ticket_detail_key(org.id, pk),
+                _tickets_list_key(org.id),
+                _my_tickets_key(org.id, old_assignee_id or 0),
+                _my_tickets_key(org.id, request.user.id),
+            ])
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -346,10 +363,13 @@ class TicketDetailView(APIView):
         ticket = self.get_object(request, pk)
         assignee_id = ticket.assignee_id
         ticket.delete()
-        cache.delete(_ticket_detail_key(org.id, pk))
-        cache.delete(_tickets_list_key(org.id))
-        cache.delete(_my_tickets_key(org.id, assignee_id or 0))
-        cache.delete(_my_tickets_key(org.id, request.user.id))
+        # Batch all Redis deletes into a single round-trip
+        cache.delete_many([
+            _ticket_detail_key(org.id, pk),
+            _tickets_list_key(org.id),
+            _my_tickets_key(org.id, assignee_id or 0),
+            _my_tickets_key(org.id, request.user.id),
+        ])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -427,7 +447,10 @@ class MyTicketsView(APIView):
                 return Response(cached)
 
         print(f"CACHE MISS – my_tickets user:{request.user.id}")
-        queryset = Ticket.objects.filter(assignee=request.user, project__organization=org)
+        # select_related eliminates N+1 queries when serializing assignee_username
+        queryset = Ticket.objects.filter(
+            assignee=request.user, project__organization=org
+        ).select_related("assignee", "reporter", "project", "sprint")
         for backend in [DjangoFilterBackend(), SearchFilter(), OrderingFilter()]:
             queryset = backend.filter_queryset(request, queryset, self)
         serializer = TicketSerializer(queryset, many=True)
