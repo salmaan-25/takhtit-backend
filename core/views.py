@@ -14,7 +14,7 @@ from .serializers import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializers import RegisterSerializer
 from .filters import TicketFilter, SprintFilter
-from .permissions import IsOrgAdminOrReadOnly, IsOrgMemberCanWrite, IsOrgMember
+from .permissions import IsOrgMemberCanWrite, IsOrgMember
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ def _get_user_org(request):
 # ===========================================================================
 
 class ProjectListView(APIView):
-    permission_classes = [IsOrgAdminOrReadOnly]
+    permission_classes = [IsOrgMemberCanWrite]
     search_fields = ["name", "key", "description"]
     ordering_fields = ["created_at", "name"]
 
@@ -118,7 +118,7 @@ class ProjectListView(APIView):
 
 
 class ProjectDetailView(APIView):
-    permission_classes = [IsOrgAdminOrReadOnly]
+    permission_classes = [IsOrgMemberCanWrite]
 
     def get_object(self, request, pk):
         """Fetch project by ID scoped to the user's org, or return 404."""
