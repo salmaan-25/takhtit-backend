@@ -1,4 +1,4 @@
-﻿from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from datetime import date, timedelta
 
@@ -148,7 +148,7 @@ class PermissionTests(APITestCase):
             name="Test Project", key="TST", organization=self.org, created_by=self.admin
         )
 
-    # --- Project creation (Admin only) ---
+    # --- Project creation (Admin + Member allowed; Viewer + No-org denied) ---
     def test_admin_can_create_project(self):
         self.client.force_authenticate(user=self.admin)
         url = reverse("project-list")
@@ -156,12 +156,13 @@ class PermissionTests(APITestCase):
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_member_cannot_create_project(self):
+    def test_member_can_create_project(self):
+        """MEMBER role should now be allowed to create projects."""
         self.client.force_authenticate(user=self.member)
         url = reverse("project-list")
-        data = {"name": "Should Fail", "key": "FAIL"}
+        data = {"name": "Member Project", "key": "MBR"}
         response = self.client.post(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_viewer_cannot_create_project(self):
         self.client.force_authenticate(user=self.viewer)

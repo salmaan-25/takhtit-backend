@@ -14,7 +14,7 @@ from .serializers import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializers import RegisterSerializer
 from .filters import TicketFilter, SprintFilter
-from .permissions import IsOrgAdminOrReadOnly, IsOrgMemberCanWrite, IsOrgMember
+from .permissions import IsOrgMemberCanWrite, IsOrgMember
 
 
 # ---------------------------------------------------------------------------
