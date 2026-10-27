@@ -1,4 +1,4 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Organization, OrganizationMember, Project, Sprint, Ticket
 
@@ -16,16 +16,29 @@ class OrganizationMemberInline(admin.TabularInline):
     autocomplete_fields = ["user"]
 
 
+class ProjectInline(admin.TabularInline):
+    """Allows creating/editing projects directly from the Organization page."""
+    model = Project
+    extra = 1
+    fields = ("name", "key", "description", "created_by")
+    autocomplete_fields = ["created_by"]
+    show_change_link = True  # Adds a link to the full Project edit page
+
+
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "member_count", "created_at")
+    list_display = ("name", "slug", "member_count", "project_count", "created_at")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}  # Auto-fills slug from name
-    inlines = [OrganizationMemberInline]
+    inlines = [OrganizationMemberInline, ProjectInline]
 
     def member_count(self, obj):
         return obj.members.count()
     member_count.short_description = "Members"
+
+    def project_count(self, obj):
+        return obj.projects.count()
+    project_count.short_description = "Projects"
 
 
 @admin.register(OrganizationMember)
